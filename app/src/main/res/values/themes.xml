@@ -1,0 +1,5 @@
+<resources>
+    <style name="Theme.AventumScan" parent="Theme.Material3.DayNight">
+        <item name="colorPrimary">@color/brand</item>
+    </style>
+</resources>

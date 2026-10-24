@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Feuille de document avec un cadre de scan. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M42,36h18l8,8v28h-26z" />
+    <path
+        android:fillColor="#1E5AA8"
+        android:pathData="M47,52h16v2h-16zM47,57h16v2h-16zM47,62h11v2h-11z" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.5"
+        android:pathData="M32,38v-8h8M68,30h8v8M76,70v8h-8M40,78h-8v-8" />
+</vector>

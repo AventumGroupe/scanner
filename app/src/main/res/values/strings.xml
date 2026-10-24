@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">Aventum Scan</string>
+    <string name="intro">Scannez vos documents avec l\'appareil photo. Les pages sont enregistrées dans la galerie (album « Scans ») et peuvent être envoyées par e-mail, SMS, WhatsApp…</string>
+    <string name="scan">Scanner un document</string>
+    <string name="share_images">Envoyer les images</string>
+    <string name="share_pdf">Envoyer en PDF</string>
+    <string name="share_via">Envoyer via…</string>
+    <string name="share_subject">Document scanné</string>
+    <string name="no_scan">Aucun document scanné pour le moment.</string>
+    <string name="saving">Enregistrement en cours…</string>
+    <plurals name="saved">
+        <item quantity="one">%d page enregistrée dans la galerie (Images › Scans).</item>
+        <item quantity="other">%d pages enregistrées dans la galerie (Images › Scans).</item>
+    </plurals>
+    <string name="pdf_saved">PDF enregistré dans Téléchargements › Scans.</string>
+    <string name="scan_error">Impossible de lancer le scanner : %s</string>
+    <string name="save_error">Erreur lors de l\'enregistrement : %s</string>
+    <string name="permission_denied">Autorisation refusée : les scans ne peuvent pas être enregistrés dans la galerie.</string>
+    <string name="no_app">Aucune application disponible pour l\'envoi.</string>
+    <string name="page_description">Page %d</string>
+</resources>
