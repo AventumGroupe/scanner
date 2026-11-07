@@ -31,7 +31,7 @@ object MediaStorage {
         return insert(context, MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values, source)
     }
 
-    /** Enregistre un fichier (PDF, TXT, DOCX…) dans Téléchargements › Scans. */
+    /** Enregistre un fichier (PDF, DOCX…) dans Téléchargements › Scans. */
     fun saveToDownloads(context: Context, source: File, displayName: String, mimeType: String): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val values = ContentValues().apply {

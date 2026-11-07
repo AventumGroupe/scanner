@@ -11,14 +11,8 @@ android {
         applicationId = "com.aventum.scanner"
         minSdk = 26
         targetSdk = 34
-        versionCode = 6
-        versionName = "1.5"
-
-        // Téléphones 64 bits uniquement (quasiment tous depuis 2017-2018) : divise la taille
-        // ajoutée par le modèle d'OCR.
-        ndk {
-            abiFilters += listOf("arm64-v8a")
-        }
+        versionCode = 7
+        versionName = "1.6"
     }
 
     // Clé de signature fixe, fournie par les secrets GitHub (jamais stockée dans le dépôt) :
@@ -53,13 +47,6 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
-
-    // Bibliothèques natives compressées dans l'APK : téléchargement plus léger.
-    packaging {
-        jniLibs {
-            useLegacyPackaging = true
-        }
-    }
 }
 
 dependencies {
@@ -71,7 +58,4 @@ dependencies {
     implementation("com.google.android.material:material:1.12.0")
     // Scanner de documents Google (détection des bords, recadrage, filtres).
     implementation("com.google.android.gms:play-services-mlkit-document-scanner:16.0.0-beta1")
-    // Reconnaissance de texte (OCR), modèle intégré à l'APK : fonctionne sans téléchargement
-    // via le Play Store ni connexion. Alphabet latin (français inclus).
-    implementation("com.google.mlkit:text-recognition:16.0.1")
 }

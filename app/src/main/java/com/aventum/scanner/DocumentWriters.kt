@@ -4,16 +4,6 @@ import java.io.File
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
-/** Écrit le texte reconnu en .txt, une section par page. */
-fun writeTxt(pages: List<String>, target: File) {
-    val text = if (pages.size == 1) {
-        pages[0]
-    } else {
-        pages.mapIndexed { index, page -> "--- Page ${index + 1} ---\n\n$page" }.joinToString("\n\n")
-    }
-    target.writeText(text + "\n", Charsets.UTF_8)
-}
-
 /** Écrit le texte reconnu en .docx minimal (Word, LibreOffice, Google Docs), un saut de page entre les pages. */
 object DocxWriter {
 

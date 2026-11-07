@@ -83,7 +83,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Format choisi, mémorisé d'une utilisation à l'autre.
-        mode = OutputMode.entries.firstOrNull { it.name == prefs.getString(KEY_MODE, null) } ?: OutputMode.JPG
+        mode = OutputMode.fromName(prefs.getString(KEY_MODE, null)) ?: OutputMode.JPG
         formatField.setSimpleItems(OutputMode.entries.map { getString(it.label) }.toTypedArray())
         formatField.setText(getString(mode.label), false)
         formatField.setOnItemClickListener { _, _, position, _ ->
@@ -148,7 +148,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun onScanClicked() {
         // L'OCR par IA a besoin de la clé d'API : la demander avant de scanner.
-        if (mode.usesAi && apiKey == null) showApiKeyDialog(onSaved = ::startScan) else startScan()
+        if (mode == OutputMode.OCR && apiKey == null) showApiKeyDialog(onSaved = ::startScan) else startScan()
     }
 
     private fun refreshHistory() {
@@ -189,13 +189,7 @@ class MainActivity : AppCompatActivity() {
         val scanMode = mode
 
         btnScan.isEnabled = false
-        showStatus(getString(
-            when (scanMode) {
-                OutputMode.TXT, OutputMode.DOCX -> R.string.recognizing
-                OutputMode.TXT_AI, OutputMode.DOCX_AI -> R.string.recognizing_ai
-                else -> R.string.preparing
-            }
-        ))
+        showStatus(getString(R.string.preparing))
 
         lifecycleScope.launch {
             try {
@@ -237,10 +231,7 @@ class MainActivity : AppCompatActivity() {
                     val pdf = File(dir, "$baseName.pdf")
                     if (pdfUri != null) copyUriToFile(pdfUri, pdf) else PdfMaker.fromImages(pages, pdf)
                 }
-                OutputMode.TXT -> writeTxt(recognizeText(pages), File(dir, "$baseName.txt"))
-                OutputMode.DOCX -> DocxWriter.write(recognizeText(pages), File(dir, "$baseName.docx"))
-                OutputMode.TXT_AI -> writeTxt(transcribeWithAi(pages), File(dir, "$baseName.txt"))
-                OutputMode.DOCX_AI -> DocxWriter.write(transcribeWithAi(pages), File(dir, "$baseName.docx"))
+                OutputMode.OCR -> DocxWriter.write(transcribeWithAi(pages), File(dir, "$baseName.docx"))
             }
             return ScanStore.finish(dir, mode, pages.size, pages[0])
         } catch (e: Exception) {
@@ -251,21 +242,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** OCR des pages ; échoue avec un message clair si aucun texte n'est trouvé. */
-    private fun recognizeText(pages: List<File>): List<String> {
-        val texts = try {
-            TextExtractor.recognize(pages)
-        } catch (e: Exception) {
-            throw IllegalStateException(getString(R.string.ocr_error, e.cause?.localizedMessage ?: e.localizedMessage ?: e.toString()), e)
-        }
-        if (texts.all { it.isBlank() }) throw IllegalStateException(getString(R.string.no_text_found))
-        return texts
-    }
-
-    /** Lecture des pages, y compris manuscrites, par l'IA Claude (connexion internet requise). */
+    /** Lecture de toutes les pages, y compris manuscrites, par l'IA Claude (connexion internet requise). */
     private fun transcribeWithAi(pages: List<File>): List<String> {
         val key = apiKey ?: throw IllegalStateException(getString(R.string.api_key_missing))
-        val texts = ClaudeTranscriber.transcribe(this, key, pages)
+        val texts = ClaudeTranscriber.transcribe(this, key, pages) { page ->
+            runOnUiThread { showStatus(getString(R.string.recognizing_page, page, pages.size)) }
+        }
         if (texts.all { it.isBlank() }) throw IllegalStateException(getString(R.string.no_text_found))
         return texts
     }

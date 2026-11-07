@@ -77,7 +77,7 @@ object ScanStore {
         val meta = File(dir, META)
         if (!meta.exists()) return null
         val props = Properties().apply { meta.inputStream().use { load(it) } }
-        val mode = OutputMode.entries.firstOrNull { it.name == props.getProperty("mode") } ?: return null
+        val mode = OutputMode.fromName(props.getProperty("mode")) ?: return null
         return ScanRecord(
             dir = dir,
             mode = mode,

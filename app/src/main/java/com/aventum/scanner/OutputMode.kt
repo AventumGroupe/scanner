@@ -10,16 +10,14 @@ enum class OutputMode(@StringRes val label: Int, val shortLabel: String, val mim
     PDF_PER_PAGE(R.string.mode_pdf_per_page, "PDF", "application/pdf"),
     /** Un seul PDF regroupant toutes les pages. */
     PDF_BATCH(R.string.mode_pdf_batch, "PDF", "application/pdf"),
-    /** Texte imprimé reconnu sur l'appareil (OCR), un seul fichier .txt. */
-    TXT(R.string.mode_txt, "TXT", "text/plain"),
-    /** Texte imprimé reconnu sur l'appareil (OCR), un seul document Word. */
-    DOCX(R.string.mode_docx, "Word", DOCX_MIME),
-    /** Texte, y compris manuscrit, lu par l'IA Claude, un seul fichier .txt. */
-    TXT_AI(R.string.mode_txt_ai, "TXT · IA", "text/plain"),
-    /** Texte, y compris manuscrit, lu par l'IA Claude, un seul document Word. */
-    DOCX_AI(R.string.mode_docx_ai, "Word · IA", DOCX_MIME);
+    /** Texte de toutes les pages, y compris manuscrit, lu par l'IA Claude, dans un seul document Word. */
+    OCR(R.string.mode_ocr, "Word · OCR", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
 
-    val usesAi get() = this == TXT_AI || this == DOCX_AI
+    companion object {
+        /** Retrouve un format enregistré, y compris sous les noms des versions précédentes. */
+        fun fromName(name: String?): OutputMode? = when (name) {
+            "DOCX", "DOCX_AI" -> OCR
+            else -> entries.firstOrNull { it.name == name }
+        }
+    }
 }
-
-private const val DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"

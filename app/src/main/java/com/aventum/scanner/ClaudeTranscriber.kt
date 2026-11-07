@@ -38,9 +38,15 @@ Règles :
     /** Erreur à afficher telle quelle à l'utilisateur. */
     class TranscriptionException(message: String) : Exception(message)
 
-    /** Renvoie le texte de chaque page. À appeler hors du thread principal. */
-    fun transcribe(context: Context, apiKey: String, images: List<File>): List<String> =
-        images.map { transcribePage(context, apiKey, encodeImage(it)) }
+    /**
+     * Renvoie le texte de chaque page, lues l'une après l'autre ; [onPage] reçoit le numéro
+     * de la page en cours (à partir de 1). À appeler hors du thread principal.
+     */
+    fun transcribe(context: Context, apiKey: String, images: List<File>, onPage: (Int) -> Unit): List<String> =
+        images.mapIndexed { index, image ->
+            onPage(index + 1)
+            transcribePage(context, apiKey, encodeImage(image))
+        }
 
     private fun encodeImage(file: File): String {
         val decoded = decodeSampled(file, MAX_IMAGE_SIDE)
