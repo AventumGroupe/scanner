@@ -32,9 +32,9 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <!-- Télécharge les modules de scan et d'OCR Google Play dès l'installation. -->
+        <!-- Télécharge le module de scan Google Play dès que possible. -->
         <meta-data
             android:name="com.google.mlkit.vision.DEPENDENCIES"
-            android:value="document_ui,ocr" />
+            android:value="document_ui" />
     </application>
 </manifest>

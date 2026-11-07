@@ -19,7 +19,7 @@ Application Android très simple :
    - **Partager** : toutes les applications installées (Messages, WhatsApp, Drive, Teams…) ;
    - **Supprimer** : retire le scan de la liste (les copies enregistrées sont conservées).
 
-La reconnaissance de texte (OCR) se fait sur le téléphone : les documents ne sont pas envoyés sur internet.
+La reconnaissance de texte (OCR) se fait sur le téléphone, avec un modèle intégré à l'application : elle fonctionne hors connexion et les documents ne sont pas envoyés sur internet.
 Le scan s'appuie sur le scanner de documents Google (ML Kit), fourni par les services Google Play
 — aucune autorisation « appareil photo » n'est donc nécessaire.
 

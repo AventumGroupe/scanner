@@ -139,7 +139,12 @@ class MainActivity : AppCompatActivity() {
                 refreshHistory()
                 showActions(record, getString(R.string.scan_ready))
             } catch (e: Exception) {
-                showStatus(getString(R.string.process_error, e.localizedMessage ?: e.toString()))
+                showStatus(null)
+                MaterialAlertDialogBuilder(this@MainActivity)
+                    .setTitle(R.string.process_error_title)
+                    .setMessage(e.localizedMessage ?: e.toString())
+                    .setPositiveButton(android.R.string.ok, null)
+                    .show()
             } finally {
                 btnScan.isEnabled = true
             }
@@ -167,8 +172,8 @@ class MainActivity : AppCompatActivity() {
                     val pdf = File(dir, "$baseName.pdf")
                     if (pdfUri != null) copyUriToFile(pdfUri, pdf) else PdfMaker.fromImages(pages, pdf)
                 }
-                OutputMode.TXT -> writeTxt(TextExtractor.recognize(this, pages), File(dir, "$baseName.txt"))
-                OutputMode.DOCX -> DocxWriter.write(TextExtractor.recognize(this, pages), File(dir, "$baseName.docx"))
+                OutputMode.TXT -> writeTxt(recognizeText(pages), File(dir, "$baseName.txt"))
+                OutputMode.DOCX -> DocxWriter.write(recognizeText(pages), File(dir, "$baseName.docx"))
             }
             return ScanStore.finish(dir, mode, pages.size, pages[0])
         } catch (e: Exception) {
@@ -177,6 +182,17 @@ class MainActivity : AppCompatActivity() {
         } finally {
             tmp.deleteRecursively()
         }
+    }
+
+    /** OCR des pages ; échoue avec un message clair si aucun texte n'est trouvé. */
+    private fun recognizeText(pages: List<File>): List<String> {
+        val texts = try {
+            TextExtractor.recognize(pages)
+        } catch (e: Exception) {
+            throw IllegalStateException(getString(R.string.ocr_error, e.cause?.localizedMessage ?: e.localizedMessage ?: e.toString()), e)
+        }
+        if (texts.all { it.isBlank() }) throw IllegalStateException(getString(R.string.no_text_found))
+        return texts
     }
 
     private fun copyUriToFile(uri: Uri, target: File) {

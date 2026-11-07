@@ -42,7 +42,9 @@
         <item quantity="other">%d fichiers enregistrés dans Téléchargements › Scans.</item>
     </plurals>
     <string name="scan_error">Impossible de lancer le scanner : %s</string>
-    <string name="process_error">Erreur lors du traitement : %s</string>
+    <string name="process_error_title">Le document n\'a pas pu être créé</string>
+    <string name="ocr_error">La reconnaissance du texte a échoué : %s</string>
+    <string name="no_text_found">Aucun texte n\'a été reconnu. Vérifiez que le document est net, bien éclairé et contient du texte imprimé, puis réessayez.</string>
     <string name="save_error">Erreur lors de l\'enregistrement : %s</string>
     <string name="permission_denied">Autorisation refusée : les fichiers ne peuvent pas être enregistrés.</string>
     <string name="no_app">Aucune application disponible pour le partage.</string>
