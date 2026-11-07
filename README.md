@@ -2,12 +2,14 @@
 
 Application Android très simple :
 
-1. **Scanner** un document avec l'appareil photo (détection automatique des bords,
+1. **Choisir le format** des fichiers (le choix est mémorisé) :
+   - **JPG – un fichier par page**, enregistré dans la galerie, album **Scans** (`Images/Scans`) ;
+   - **PDF – un fichier par page**, enregistré dans **Téléchargements/Scans** ;
+   - **PDF – un seul fichier pour toutes les pages** (scan en lot), dans **Téléchargements/Scans**.
+2. **Scanner** un document avec l'appareil photo (détection automatique des bords,
    recadrage, filtres noir & blanc, plusieurs pages, import depuis la galerie possible).
-2. **Enregistrer** automatiquement chaque page dans la galerie, album **Scans**
-   (`Images/Scans`), et le PDF de toutes les pages dans **Téléchargements/Scans**.
-3. **Envoyer** les pages (en images JPEG ou en un seul PDF) via n'importe quelle application
-   installée : Gmail, Outlook, Messages (SMS/MMS), WhatsApp, Drive, Teams…
+3. **Envoyer** les fichiers produits via n'importe quelle application installée :
+   Gmail, Outlook, Messages (SMS/MMS), WhatsApp, Drive, Teams…
 
 Le scan s'appuie sur le scanner de documents Google (ML Kit), fourni par les services Google Play
 — aucune autorisation « appareil photo » n'est donc nécessaire.
@@ -40,4 +42,5 @@ Avec Android Studio (ouvrir le dossier) ou en ligne de commande avec le SDK Andr
 |---|---|
 | `app/src/main/java/com/aventum/scanner/MainActivity.kt` | Écran principal : scan, enregistrement, partage |
 | `app/src/main/java/com/aventum/scanner/MediaStorage.kt` | Écriture dans la galerie et les Téléchargements |
+| `app/src/main/java/com/aventum/scanner/PdfMaker.kt` | Création des PDF page par page |
 | `app/src/main/java/com/aventum/scanner/PageAdapter.kt` | Miniatures des pages scannées |

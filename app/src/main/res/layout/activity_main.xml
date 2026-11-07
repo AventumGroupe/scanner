@@ -11,11 +11,42 @@
         android:text="@string/intro"
         android:textAppearance="?attr/textAppearanceBodyMedium" />
 
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/mode_label"
+        android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+    <RadioGroup
+        android:id="@+id/modeGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <RadioButton
+            android:id="@+id/modeJpg"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/mode_jpg" />
+
+        <RadioButton
+            android:id="@+id/modePdfPerPage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/mode_pdf_per_page" />
+
+        <RadioButton
+            android:id="@+id/modePdfBatch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/mode_pdf_batch" />
+    </RadioGroup>
+
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnScan"
         android:layout_width="match_parent"
         android:layout_height="72dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         android:text="@string/scan"
         android:textSize="18sp" />
 
@@ -34,27 +65,10 @@
         android:layout_marginTop="8dp"
         android:layout_weight="1" />
 
-    <LinearLayout
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnShare"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnShareImages"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:layout_weight="1"
-            android:enabled="false"
-            android:text="@string/share_images" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSharePdf"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:enabled="false"
-            android:text="@string/share_pdf" />
-    </LinearLayout>
+        android:enabled="false"
+        android:text="@string/share" />
 </LinearLayout>

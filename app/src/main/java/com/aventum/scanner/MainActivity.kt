@@ -5,12 +5,11 @@ import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.widget.Button
+import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.IntentSenderRequest
@@ -34,30 +33,36 @@ import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
+    /** Format des fichiers produits par un scan. */
+    private enum class OutputMode(val radioId: Int) {
+        /** Une image JPEG par page, dans la galerie. */
+        JPG(R.id.modeJpg),
+        /** Un PDF par page. */
+        PDF_PER_PAGE(R.id.modePdfPerPage),
+        /** Un seul PDF regroupant toutes les pages. */
+        PDF_BATCH(R.id.modePdfBatch);
+
+        companion object {
+            fun fromRadioId(id: Int) = entries.firstOrNull { it.radioId == id } ?: JPG
+        }
+    }
+
     private lateinit var btnScan: Button
-    private lateinit var btnShareImages: Button
-    private lateinit var btnSharePdf: Button
+    private lateinit var btnShare: Button
+    private lateinit var modeGroup: RadioGroup
     private lateinit var txtStatus: TextView
     private val adapter = PageAdapter()
 
-    /** Copies privées du dernier scan, partagées via le FileProvider. */
+    /** Pages du dernier scan (pour les miniatures). */
     private var pageFiles: List<File> = emptyList()
-    private var pdfFile: File? = null
+    /** Fichiers produits par le dernier scan, partagés via le FileProvider. */
+    private var outputFiles: List<File> = emptyList()
+    private var outputMime = "image/jpeg"
 
     private val sharedDir by lazy { File(cacheDir, "shared") }
+    private val prefs by lazy { getSharedPreferences("settings", MODE_PRIVATE) }
 
-    private val scanner by lazy {
-        val options = GmsDocumentScannerOptions.Builder()
-            .setGalleryImportAllowed(true)
-            .setPageLimit(30)
-            .setResultFormats(
-                GmsDocumentScannerOptions.RESULT_FORMAT_JPEG,
-                GmsDocumentScannerOptions.RESULT_FORMAT_PDF
-            )
-            .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_FULL)
-            .build()
-        GmsDocumentScanning.getClient(options)
-    }
+    private val selectedMode get() = OutputMode.fromRadioId(modeGroup.checkedRadioButtonId)
 
     private val scanLauncher =
         registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
@@ -76,25 +81,31 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         btnScan = findViewById(R.id.btnScan)
-        btnShareImages = findViewById(R.id.btnShareImages)
-        btnSharePdf = findViewById(R.id.btnSharePdf)
+        btnShare = findViewById(R.id.btnShare)
+        modeGroup = findViewById(R.id.modeGroup)
         txtStatus = findViewById(R.id.txtStatus)
         findViewById<RecyclerView>(R.id.recycler).apply {
             layoutManager = GridLayoutManager(this@MainActivity, 3)
             adapter = this@MainActivity.adapter
         }
 
+        // Mémorise le dernier format choisi.
+        val savedMode = prefs.getString(KEY_MODE, null)
+        modeGroup.check((OutputMode.entries.firstOrNull { it.name == savedMode } ?: OutputMode.JPG).radioId)
+        modeGroup.setOnCheckedChangeListener { _, _ ->
+            prefs.edit().putString(KEY_MODE, selectedMode.name).apply()
+        }
+
         btnScan.setOnClickListener { onScanClicked() }
-        btnShareImages.setOnClickListener { share(pageFiles, "image/jpeg") }
-        btnSharePdf.setOnClickListener { pdfFile?.let { share(listOf(it), "application/pdf") } }
+        btnShare.setOnClickListener { share(outputFiles, outputMime) }
 
         // Restaure le dernier scan après une rotation d'écran.
         savedInstanceState?.let { state ->
             val pages = state.getStringArrayList(KEY_PAGES).orEmpty().map(::File).filter(File::exists)
-            val pdf = state.getString(KEY_PDF)?.let(::File)?.takeIf(File::exists)
-            if (pages.isNotEmpty()) {
+            val outputs = state.getStringArrayList(KEY_OUTPUTS).orEmpty().map(::File).filter(File::exists)
+            if (outputs.isNotEmpty()) {
                 txtStatus.text = state.getString(KEY_STATUS)
-                showScan(pages, pdf)
+                showScan(pages, outputs, state.getString(KEY_MIME) ?: outputMime)
             }
         }
     }
@@ -102,7 +113,8 @@ class MainActivity : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putStringArrayList(KEY_PAGES, ArrayList(pageFiles.map(File::getAbsolutePath)))
-        outState.putString(KEY_PDF, pdfFile?.absolutePath)
+        outState.putStringArrayList(KEY_OUTPUTS, ArrayList(outputFiles.map(File::getAbsolutePath)))
+        outState.putString(KEY_MIME, outputMime)
         outState.putString(KEY_STATUS, txtStatus.text.toString())
     }
 
@@ -118,7 +130,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startScan() {
-        scanner.getStartScanIntent(this)
+        val builder = GmsDocumentScannerOptions.Builder()
+            .setGalleryImportAllowed(true)
+            .setPageLimit(30)
+            .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_FULL)
+        // Le PDF multipage produit par le scanner n'est utile qu'en mode lot.
+        if (selectedMode == OutputMode.PDF_BATCH) {
+            builder.setResultFormats(
+                GmsDocumentScannerOptions.RESULT_FORMAT_JPEG,
+                GmsDocumentScannerOptions.RESULT_FORMAT_PDF
+            )
+        } else {
+            builder.setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
+        }
+        GmsDocumentScanning.getClient(builder.build()).getStartScanIntent(this)
             .addOnSuccessListener { sender ->
                 scanLauncher.launch(IntentSenderRequest.Builder(sender).build())
             }
@@ -131,18 +156,17 @@ class MainActivity : AppCompatActivity() {
         val pageUris = result.pages?.map { it.imageUri }.orEmpty()
         val pdfUri = result.pdf?.uri
         if (pageUris.isEmpty()) return
+        val mode = selectedMode
 
         btnScan.isEnabled = false
+        btnShare.isEnabled = false
         txtStatus.text = getString(R.string.saving)
 
         lifecycleScope.launch {
             try {
-                val (pages, pdf, pdfSaved) = withContext(Dispatchers.IO) { savePages(pageUris, pdfUri) }
-                txtStatus.text = buildString {
-                    append(resources.getQuantityString(R.plurals.saved, pages.size, pages.size))
-                    if (pdfSaved) append('\n').append(getString(R.string.pdf_saved))
-                }
-                showScan(pages, pdf)
+                val saved = withContext(Dispatchers.IO) { saveScan(pageUris, pdfUri, mode) }
+                txtStatus.text = saved.status
+                showScan(saved.pages, saved.outputs, saved.mime)
             } catch (e: Exception) {
                 txtStatus.text = getString(R.string.save_error, e.localizedMessage ?: e.toString())
             } finally {
@@ -151,31 +175,44 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private data class Saved(val pages: List<File>, val pdf: File?, val pdfSaved: Boolean)
+    private class Saved(val pages: List<File>, val outputs: List<File>, val mime: String, val status: String)
 
-    /** Copie le scan dans le cache (pour le partage) puis dans la galerie / Téléchargements. */
-    private fun savePages(pageUris: List<Uri>, pdfUri: Uri?): Saved {
+    /** Produit les fichiers du format choisi, dans le cache (pour le partage) et en stockage public. */
+    private fun saveScan(pageUris: List<Uri>, pdfUri: Uri?, mode: OutputMode): Saved {
         sharedDir.deleteRecursively()
         sharedDir.mkdirs()
         val baseName = "Scan_" + SimpleDateFormat("yyyyMMdd_HHmmss", Locale.FRANCE).format(Date())
+        val single = pageUris.size == 1
+        fun pageName(index: Int, ext: String) = if (single) "$baseName.$ext" else "${baseName}_p${index + 1}.$ext"
 
         val pages = pageUris.mapIndexed { index, uri ->
-            val name = if (pageUris.size == 1) "$baseName.jpg" else "${baseName}_p${index + 1}.jpg"
-            val file = File(sharedDir, name)
-            copyUriToFile(uri, file)
-            MediaStorage.saveImageToGallery(this, file, name)
-            file
+            File(sharedDir, pageName(index, "jpg")).also { copyUriToFile(uri, it) }
         }
 
-        var pdfSaved = false
-        val pdf = pdfUri?.let { uri ->
-            val file = File(sharedDir, "$baseName.pdf")
-            copyUriToFile(uri, file)
-            pdfSaved = runCatching { MediaStorage.savePdfToDownloads(this, file, file.name) }
-                .getOrDefault(false)
-            file
+        return when (mode) {
+            OutputMode.JPG -> {
+                pages.forEach { MediaStorage.saveImageToGallery(this, it, it.name) }
+                Saved(pages, pages, "image/jpeg",
+                    resources.getQuantityString(R.plurals.saved_jpg, pages.size, pages.size))
+            }
+            OutputMode.PDF_PER_PAGE -> {
+                val pdfs = pages.mapIndexed { index, page ->
+                    File(sharedDir, pageName(index, "pdf")).also { pdf ->
+                        PdfMaker.fromImages(listOf(page), pdf)
+                        MediaStorage.savePdfToDownloads(this, pdf, pdf.name)
+                    }
+                }
+                Saved(pages, pdfs, "application/pdf",
+                    resources.getQuantityString(R.plurals.saved_pdf_per_page, pdfs.size, pdfs.size))
+            }
+            OutputMode.PDF_BATCH -> {
+                val pdf = File(sharedDir, "$baseName.pdf")
+                if (pdfUri != null) copyUriToFile(pdfUri, pdf) else PdfMaker.fromImages(pages, pdf)
+                MediaStorage.savePdfToDownloads(this, pdf, pdf.name)
+                Saved(pages, listOf(pdf), "application/pdf",
+                    resources.getQuantityString(R.plurals.saved_pdf_batch, pages.size, pages.size))
+            }
         }
-        return Saved(pages, pdf, pdfSaved)
     }
 
     private fun copyUriToFile(uri: Uri, target: File) {
@@ -184,25 +221,15 @@ class MainActivity : AppCompatActivity() {
         input.use { inp -> target.outputStream().use { inp.copyTo(it) } }
     }
 
-    private fun showScan(pages: List<File>, pdf: File?) {
+    private fun showScan(pages: List<File>, outputs: List<File>, mime: String) {
         pageFiles = pages
-        pdfFile = pdf
-        btnShareImages.isEnabled = pages.isNotEmpty()
-        btnSharePdf.isEnabled = pdf != null
+        outputFiles = outputs
+        outputMime = mime
+        btnShare.isEnabled = outputs.isNotEmpty()
         lifecycleScope.launch {
-            val thumbs = withContext(Dispatchers.IO) { pages.mapNotNull { decodeThumbnail(it, 360) } }
+            val thumbs = withContext(Dispatchers.IO) { pages.mapNotNull { decodeSampled(it, 360) } }
             adapter.submit(thumbs)
         }
-    }
-
-    private fun decodeThumbnail(file: File, maxSize: Int): Bitmap? {
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeFile(file.absolutePath, bounds)
-        var sample = 1
-        while (bounds.outWidth / (sample * 2) >= maxSize || bounds.outHeight / (sample * 2) >= maxSize) {
-            sample *= 2
-        }
-        return BitmapFactory.decodeFile(file.absolutePath, BitmapFactory.Options().apply { inSampleSize = sample })
     }
 
     /** Ouvre le sélecteur Android : Gmail, Outlook, Messages, WhatsApp, Drive… */
@@ -232,8 +259,10 @@ class MainActivity : AppCompatActivity() {
     private fun toast(message: String) = Toast.makeText(this, message, Toast.LENGTH_LONG).show()
 
     private companion object {
+        const val KEY_MODE = "output_mode"
         const val KEY_PAGES = "pages"
-        const val KEY_PDF = "pdf"
+        const val KEY_OUTPUTS = "outputs"
+        const val KEY_MIME = "mime"
         const val KEY_STATUS = "status"
     }
 }

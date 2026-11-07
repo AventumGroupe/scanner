@@ -1,18 +1,28 @@
 <resources>
     <string name="app_name">Aventum Scan</string>
-    <string name="intro">Scannez vos documents avec l\'appareil photo. Les pages sont enregistrées dans la galerie (album « Scans ») et peuvent être envoyées par e-mail, SMS, WhatsApp…</string>
+    <string name="intro">Scannez vos documents avec l\'appareil photo, puis envoyez-les par e-mail, SMS, WhatsApp… Les images vont dans la galerie (album « Scans »), les PDF dans Téléchargements › Scans.</string>
+    <string name="mode_label">Format des fichiers</string>
+    <string name="mode_jpg">JPG – un fichier par page (galerie)</string>
+    <string name="mode_pdf_per_page">PDF – un fichier par page</string>
+    <string name="mode_pdf_batch">PDF – un seul fichier pour toutes les pages</string>
     <string name="scan">Scanner un document</string>
-    <string name="share_images">Envoyer les images</string>
-    <string name="share_pdf">Envoyer en PDF</string>
+    <string name="share">Envoyer</string>
     <string name="share_via">Envoyer via…</string>
     <string name="share_subject">Document scanné</string>
     <string name="no_scan">Aucun document scanné pour le moment.</string>
     <string name="saving">Enregistrement en cours…</string>
-    <plurals name="saved">
-        <item quantity="one">%d page enregistrée dans la galerie (Images › Scans).</item>
-        <item quantity="other">%d pages enregistrées dans la galerie (Images › Scans).</item>
+    <plurals name="saved_jpg">
+        <item quantity="one">%d image enregistrée dans la galerie (Images › Scans).</item>
+        <item quantity="other">%d images enregistrées dans la galerie (Images › Scans).</item>
     </plurals>
-    <string name="pdf_saved">PDF enregistré dans Téléchargements › Scans.</string>
+    <plurals name="saved_pdf_per_page">
+        <item quantity="one">%d PDF enregistré dans Téléchargements › Scans.</item>
+        <item quantity="other">%d PDF enregistrés dans Téléchargements › Scans.</item>
+    </plurals>
+    <plurals name="saved_pdf_batch">
+        <item quantity="one">PDF de %d page enregistré dans Téléchargements › Scans.</item>
+        <item quantity="other">PDF de %d pages enregistré dans Téléchargements › Scans.</item>
+    </plurals>
     <string name="scan_error">Impossible de lancer le scanner : %s</string>
     <string name="save_error">Erreur lors de l\'enregistrement : %s</string>
     <string name="permission_denied">Autorisation refusée : les scans ne peuvent pas être enregistrés dans la galerie.</string>
