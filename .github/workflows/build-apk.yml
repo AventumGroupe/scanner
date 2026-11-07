@@ -4,9 +4,15 @@ on:
   push:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      SIGNING_KEYSTORE: ${{ secrets.SIGNING_KEYSTORE }}
+      SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
 
@@ -17,11 +23,37 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
+      - name: Préparer la clé de signature
+        if: env.SIGNING_KEYSTORE != ''
+        run: |
+          echo "$SIGNING_KEYSTORE" | base64 -d > "$RUNNER_TEMP/release.jks"
+          echo "SIGNING_KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+
       - name: Compiler
         run: ./gradlew --no-daemon assembleRelease
 
-      - name: Publier l'APK
+      - name: Renommer l'APK
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk AventumScan.apk
+          echo "VERSION=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)" >> "$GITHUB_ENV"
+
+      - name: Publier l'APK (artefact)
         uses: actions/upload-artifact@v4
         with:
           name: AventumScan-apk
-          path: app/build/outputs/apk/release/*.apk
+          path: AventumScan.apk
+
+      # Lien de téléchargement direct, uniquement pour les APK signés avec la clé fixe.
+      - name: Publier la version (Release)
+        if: env.SIGNING_KEYSTORE != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: Aventum Scan ${{ env.VERSION }}
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          files: AventumScan.apk
+          body: |
+            Télécharger **AventumScan.apk** ci-dessous, l'ouvrir sur le téléphone puis toucher « Installer ».
+            Lien permanent vers la dernière version :
+            https://github.com/${{ github.repository }}/releases/latest/download/AventumScan.apk

@@ -20,13 +20,24 @@ La reconnaissance de texte (OCR) se fait sur le téléphone : les documents ne s
 Le scan s'appuie sur le scanner de documents Google (ML Kit), fourni par les services Google Play
 — aucune autorisation « appareil photo » n'est donc nécessaire.
 
-## Récupérer l'APK
+## Installer / mettre à jour l'application
 
-À chaque push, GitHub Actions compile l'application :
+Sur le téléphone, ouvrir ce lien (toujours la dernière version) :
 
-1. Onglet **Actions** du dépôt → workflow **Construire l'APK** → dernière exécution.
-2. Télécharger l'artefact **AventumScan-apk** (fichier zip contenant `app-release.apk`).
-3. Copier l'APK sur le téléphone, l'ouvrir et autoriser « l'installation d'applications inconnues ».
+**https://github.com/AventumGroupe/scanner/releases/latest/download/AventumScan.apk**
+
+puis ouvrir le fichier téléchargé et toucher **Installer** (la première fois, autoriser
+« l'installation d'applications inconnues »). Une mise à jour s'installe directement
+par-dessus la version précédente.
+
+### Publier une nouvelle version
+
+1. Augmenter `versionCode` et `versionName` dans `app/build.gradle.kts`.
+2. Pousser : GitHub Actions compile, signe l'APK et crée la Release `v<versionName>`.
+
+La signature utilise deux secrets du dépôt (*Settings › Secrets and variables › Actions*) :
+`SIGNING_KEYSTORE` (fichier `.jks` encodé en base64) et `SIGNING_PASSWORD`.
+Sans eux, l'APK est signé avec une clé temporaire (artefact uniquement, pas de Release).
 
 ## Compiler en local
 

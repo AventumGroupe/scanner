@@ -15,11 +15,25 @@ android {
         versionName = "1.1"
     }
 
+    // Clé de signature fixe, fournie par les secrets GitHub (jamais stockée dans le dépôt) :
+    // indispensable pour qu'une nouvelle version s'installe par-dessus l'ancienne.
+    val releaseKeystore = System.getenv("SIGNING_KEYSTORE_FILE")
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                storePassword = System.getenv("SIGNING_PASSWORD")
+                keyAlias = "aventum"
+                keyPassword = System.getenv("SIGNING_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
-            // Signé avec la clé de debug pour pouvoir installer l'APK directement.
-            signingConfig = signingConfigs.getByName("debug")
+            // Sans clé fournie, signé avec la clé de debug pour rester installable.
+            signingConfig = signingConfigs.getByName(if (releaseKeystore != null) "release" else "debug")
         }
     }
 
