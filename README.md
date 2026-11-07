@@ -7,7 +7,8 @@ Application Android très simple :
    - **PDF** – un fichier par page ;
    - **PDF** – un seul fichier pour toutes les pages (scan en lot) ;
    - **Texte (OCR) – TXT** : le texte reconnu, toutes les pages dans un fichier ;
-   - **Texte (OCR) – Word (DOCX)** : le texte reconnu, un saut de page entre chaque page.
+   - **Texte (OCR) – Word (DOCX)** : le texte reconnu, un saut de page entre chaque page ;
+   - **Manuscrit (IA) – TXT ou Word** : lecture de l'écriture manuscrite par l'IA Claude (voir ci-dessous).
 2. **Scanner** un document avec l'appareil photo (détection automatique des bords,
    recadrage, filtres noir & blanc, plusieurs pages, import depuis la galerie possible).
 3. Le document rejoint la liste **Mes scans** de l'écran d'accueil (du plus récent au plus ancien).
@@ -18,6 +19,19 @@ Application Android très simple :
    - **Envoyer par e-mail** : uniquement les applications de messagerie (Gmail, Outlook…), fichiers en pièce jointe ;
    - **Partager** : toutes les applications installées (Messages, WhatsApp, Drive, Teams…) ;
    - **Supprimer** : retire le scan de la liste (les copies enregistrées sont conservées).
+
+### OCR manuscrit (IA)
+
+Les modes « Manuscrit (IA) » envoient chaque page à l'API Claude d'Anthropic (modèle `claude-opus-5-5`),
+qui sait lire l'écriture manuscrite. Ils nécessitent :
+
+- une **clé d'API Anthropic** (console.anthropic.com), saisie une fois dans l'application
+  (menu **⋮ › Clé API Claude**) et conservée uniquement sur le téléphone ;
+- une **connexion internet** ; l'usage est facturé par Anthropic sur le compte de la clé.
+
+Les pages sont alors **envoyées à Anthropic** : à éviter pour les documents confidentiels.
+
+### OCR sur le téléphone
 
 La reconnaissance de texte (OCR) se fait sur le téléphone, avec un modèle intégré à l'application : elle fonctionne hors connexion et les documents ne sont pas envoyés sur internet.
 Le scan s'appuie sur le scanner de documents Google (ML Kit), fourni par les services Google Play
@@ -63,7 +77,8 @@ Avec Android Studio (ouvrir le dossier) ou en ligne de commande avec le SDK Andr
 | `app/src/main/java/com/aventum/scanner/MainActivity.kt` | Écran d'accueil : format, scan, actions |
 | `app/src/main/java/com/aventum/scanner/MediaStorage.kt` | Écriture dans la galerie et les Téléchargements |
 | `app/src/main/java/com/aventum/scanner/PdfMaker.kt` | Création des PDF page par page |
-| `app/src/main/java/com/aventum/scanner/TextExtractor.kt` | Reconnaissance de texte (OCR) |
+| `app/src/main/java/com/aventum/scanner/TextExtractor.kt` | Reconnaissance de texte (OCR) sur le téléphone |
+| `app/src/main/java/com/aventum/scanner/ClaudeTranscriber.kt` | OCR manuscrit par l'API Claude |
 | `app/src/main/java/com/aventum/scanner/DocumentWriters.kt` | Écriture des fichiers TXT et DOCX |
 | `app/src/main/java/com/aventum/scanner/ScanStore.kt` | Historique « Mes scans » (stockage privé) |
 | `app/src/main/java/com/aventum/scanner/ScanAdapter.kt` | Affichage de la liste « Mes scans » |

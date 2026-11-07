@@ -8,7 +8,12 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.text.InputType
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Button
+import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.IntentSenderRequest
@@ -86,8 +91,64 @@ class MainActivity : AppCompatActivity() {
             prefs.edit().putString(KEY_MODE, mode.name).apply()
         }
 
-        btnScan.setOnClickListener { startScan() }
+        btnScan.setOnClickListener { onScanClicked() }
         refreshHistory()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.menuApiKey) {
+            showApiKeyDialog()
+            return true
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+    private val apiKey: String? get() = prefs.getString(KEY_API_KEY, null)?.takeIf { it.isNotBlank() }
+
+    /** Saisie de la clé d'API Anthropic, conservée uniquement sur le téléphone. */
+    private fun showApiKeyDialog(onSaved: (() -> Unit)? = null) {
+        val input = EditText(this).apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            hint = getString(R.string.api_key_hint)
+            setText(apiKey.orEmpty())
+        }
+        val container = FrameLayout(this).apply {
+            val padding = (20 * resources.displayMetrics.density).toInt()
+            setPadding(padding, 0, padding, 0)
+            addView(input)
+        }
+        val builder = MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.api_key_title)
+            .setMessage(R.string.api_key_message)
+            .setView(container)
+            .setPositiveButton(R.string.api_key_save) { _, _ ->
+                val key = input.text.toString().trim()
+                if (!key.startsWith("sk-ant-")) {
+                    toast(getString(R.string.api_key_invalid))
+                } else {
+                    prefs.edit().putString(KEY_API_KEY, key).apply()
+                    toast(getString(R.string.api_key_saved))
+                    onSaved?.invoke()
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+        if (apiKey != null) {
+            builder.setNeutralButton(R.string.api_key_delete) { _, _ ->
+                prefs.edit().remove(KEY_API_KEY).apply()
+                toast(getString(R.string.api_key_deleted))
+            }
+        }
+        builder.show()
+    }
+
+    private fun onScanClicked() {
+        // L'OCR par IA a besoin de la clé d'API : la demander avant de scanner.
+        if (mode.usesAi && apiKey == null) showApiKeyDialog(onSaved = ::startScan) else startScan()
     }
 
     private fun refreshHistory() {
@@ -129,7 +190,11 @@ class MainActivity : AppCompatActivity() {
 
         btnScan.isEnabled = false
         showStatus(getString(
-            if (scanMode == OutputMode.TXT || scanMode == OutputMode.DOCX) R.string.recognizing else R.string.preparing
+            when (scanMode) {
+                OutputMode.TXT, OutputMode.DOCX -> R.string.recognizing
+                OutputMode.TXT_AI, OutputMode.DOCX_AI -> R.string.recognizing_ai
+                else -> R.string.preparing
+            }
         ))
 
         lifecycleScope.launch {
@@ -174,6 +239,8 @@ class MainActivity : AppCompatActivity() {
                 }
                 OutputMode.TXT -> writeTxt(recognizeText(pages), File(dir, "$baseName.txt"))
                 OutputMode.DOCX -> DocxWriter.write(recognizeText(pages), File(dir, "$baseName.docx"))
+                OutputMode.TXT_AI -> writeTxt(transcribeWithAi(pages), File(dir, "$baseName.txt"))
+                OutputMode.DOCX_AI -> DocxWriter.write(transcribeWithAi(pages), File(dir, "$baseName.docx"))
             }
             return ScanStore.finish(dir, mode, pages.size, pages[0])
         } catch (e: Exception) {
@@ -191,6 +258,14 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             throw IllegalStateException(getString(R.string.ocr_error, e.cause?.localizedMessage ?: e.localizedMessage ?: e.toString()), e)
         }
+        if (texts.all { it.isBlank() }) throw IllegalStateException(getString(R.string.no_text_found))
+        return texts
+    }
+
+    /** Lecture des pages, y compris manuscrites, par l'IA Claude (connexion internet requise). */
+    private fun transcribeWithAi(pages: List<File>): List<String> {
+        val key = apiKey ?: throw IllegalStateException(getString(R.string.api_key_missing))
+        val texts = ClaudeTranscriber.transcribe(this, key, pages)
         if (texts.all { it.isBlank() }) throw IllegalStateException(getString(R.string.no_text_found))
         return texts
     }
@@ -325,5 +400,6 @@ class MainActivity : AppCompatActivity() {
 
     private companion object {
         const val KEY_MODE = "output_mode"
+        const val KEY_API_KEY = "anthropic_api_key"
     }
 }

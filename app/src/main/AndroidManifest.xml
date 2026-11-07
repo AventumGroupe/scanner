@@ -1,13 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- OCR manuscrit par l'IA Claude (API Anthropic). -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <!-- Nécessaire uniquement sur Android 8 et 9 pour écrire dans la galerie et les Téléchargements. -->
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
 
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
