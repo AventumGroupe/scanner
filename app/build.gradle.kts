@@ -11,8 +11,8 @@ android {
         applicationId = "com.aventum.scanner"
         minSdk = 26
         targetSdk = 34
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 3
+        versionName = "1.2"
     }
 
     // Clé de signature fixe, fournie par les secrets GitHub (jamais stockée dans le dépôt) :

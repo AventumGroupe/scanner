@@ -9,7 +9,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.widget.Button
-import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.IntentSenderRequest
@@ -17,9 +16,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
@@ -33,43 +35,17 @@ import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
-    /** Format des fichiers produits par un scan. */
-    private enum class OutputMode(val radioId: Int, val mime: String) {
-        /** Une image JPEG par page, enregistrée dans la galerie. */
-        JPG(R.id.modeJpg, "image/jpeg"),
-        /** Un PDF par page. */
-        PDF_PER_PAGE(R.id.modePdfPerPage, "application/pdf"),
-        /** Un seul PDF regroupant toutes les pages. */
-        PDF_BATCH(R.id.modePdfBatch, "application/pdf"),
-        /** Texte reconnu (OCR), un seul fichier .txt. */
-        TXT(R.id.modeTxt, "text/plain"),
-        /** Texte reconnu (OCR), un seul document Word. */
-        DOCX(R.id.modeDocx, "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-
-        companion object {
-            fun fromRadioId(id: Int) = entries.firstOrNull { it.radioId == id } ?: JPG
-        }
-    }
-
     private lateinit var btnScan: Button
-    private lateinit var btnSave: Button
-    private lateinit var btnEmail: Button
-    private lateinit var btnShare: Button
-    private lateinit var modeGroup: RadioGroup
+    private lateinit var formatField: MaterialAutoCompleteTextView
     private lateinit var txtStatus: TextView
-    private val adapter = PageAdapter()
+    private lateinit var txtHistoryTitle: TextView
+    private val adapter = ScanAdapter { showActions(it, getString(R.string.actions_title, it.name)) }
 
-    /** Pages du dernier scan (pour les miniatures). */
-    private var pageFiles: List<File> = emptyList()
-    /** Fichiers produits par le dernier scan, dans le cache, partagés via le FileProvider. */
-    private var outputFiles: List<File> = emptyList()
-    private var outputMode = OutputMode.JPG
-    private var saved = false
+    private var mode = OutputMode.JPG
+    /** Scan à enregistrer une fois l'autorisation de stockage accordée (Android 8 et 9). */
+    private var pendingSave: ScanRecord? = null
 
-    private val sharedDir by lazy { File(cacheDir, "shared") }
     private val prefs by lazy { getSharedPreferences("settings", MODE_PRIVATE) }
-
-    private val selectedMode get() = OutputMode.fromRadioId(modeGroup.checkedRadioButtonId)
 
     private val scanLauncher =
         registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
@@ -80,7 +56,12 @@ class MainActivity : AppCompatActivity() {
 
     private val storagePermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            if (granted) saveOutputs() else toast(getString(R.string.permission_denied))
+            val record = pendingSave
+            pendingSave = null
+            when {
+                !granted -> toast(getString(R.string.permission_denied))
+                record != null -> save(record)
+            }
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -88,47 +69,33 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         btnScan = findViewById(R.id.btnScan)
-        btnSave = findViewById(R.id.btnSave)
-        btnEmail = findViewById(R.id.btnEmail)
-        btnShare = findViewById(R.id.btnShare)
-        modeGroup = findViewById(R.id.modeGroup)
+        formatField = findViewById(R.id.formatField)
         txtStatus = findViewById(R.id.txtStatus)
+        txtHistoryTitle = findViewById(R.id.txtHistoryTitle)
         findViewById<RecyclerView>(R.id.recycler).apply {
-            layoutManager = GridLayoutManager(this@MainActivity, 3)
+            layoutManager = LinearLayoutManager(this@MainActivity)
             adapter = this@MainActivity.adapter
         }
 
-        // Mémorise le dernier format choisi.
-        val savedMode = prefs.getString(KEY_MODE, null)
-        modeGroup.check((OutputMode.entries.firstOrNull { it.name == savedMode } ?: OutputMode.JPG).radioId)
-        modeGroup.setOnCheckedChangeListener { _, _ ->
-            prefs.edit().putString(KEY_MODE, selectedMode.name).apply()
+        // Format choisi, mémorisé d'une utilisation à l'autre.
+        mode = OutputMode.entries.firstOrNull { it.name == prefs.getString(KEY_MODE, null) } ?: OutputMode.JPG
+        formatField.setSimpleItems(OutputMode.entries.map { getString(it.label) }.toTypedArray())
+        formatField.setText(getString(mode.label), false)
+        formatField.setOnItemClickListener { _, _, position, _ ->
+            mode = OutputMode.entries[position]
+            prefs.edit().putString(KEY_MODE, mode.name).apply()
         }
 
         btnScan.setOnClickListener { startScan() }
-        btnSave.setOnClickListener { onSaveClicked() }
-        btnEmail.setOnClickListener { share(email = true) }
-        btnShare.setOnClickListener { share(email = false) }
-
-        // Restaure le dernier scan après une rotation d'écran.
-        savedInstanceState?.let { state ->
-            val pages = state.getStringArrayList(KEY_PAGES).orEmpty().map(::File).filter(File::exists)
-            val outputs = state.getStringArrayList(KEY_OUTPUTS).orEmpty().map(::File).filter(File::exists)
-            if (outputs.isNotEmpty()) {
-                txtStatus.text = state.getString(KEY_STATUS)
-                val mode = OutputMode.entries.firstOrNull { it.name == state.getString(KEY_OUTPUT_MODE) }
-                showScan(pages, outputs, mode ?: OutputMode.JPG, state.getBoolean(KEY_SAVED))
-            }
-        }
+        refreshHistory()
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putStringArrayList(KEY_PAGES, ArrayList(pageFiles.map(File::getAbsolutePath)))
-        outState.putStringArrayList(KEY_OUTPUTS, ArrayList(outputFiles.map(File::getAbsolutePath)))
-        outState.putString(KEY_OUTPUT_MODE, outputMode.name)
-        outState.putBoolean(KEY_SAVED, saved)
-        outState.putString(KEY_STATUS, txtStatus.text.toString())
+    private fun refreshHistory() {
+        lifecycleScope.launch {
+            val scans = withContext(Dispatchers.IO) { ScanStore.list(this@MainActivity) }
+            adapter.submit(scans)
+            txtHistoryTitle.isVisible = scans.isNotEmpty()
+        }
     }
 
     private fun startScan() {
@@ -137,7 +104,7 @@ class MainActivity : AppCompatActivity() {
             .setPageLimit(30)
             .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_FULL)
         // Le PDF multipage produit par le scanner n'est utile qu'en mode lot.
-        if (selectedMode == OutputMode.PDF_BATCH) {
+        if (mode == OutputMode.PDF_BATCH) {
             builder.setResultFormats(
                 GmsDocumentScannerOptions.RESULT_FORMAT_JPEG,
                 GmsDocumentScannerOptions.RESULT_FORMAT_PDF
@@ -158,60 +125,58 @@ class MainActivity : AppCompatActivity() {
         val pageUris = result.pages?.map { it.imageUri }.orEmpty()
         val pdfUri = result.pdf?.uri
         if (pageUris.isEmpty()) return
-        val mode = selectedMode
+        val scanMode = mode
 
-        setBusy(true)
-        txtStatus.text = getString(
-            if (mode == OutputMode.TXT || mode == OutputMode.DOCX) R.string.recognizing else R.string.preparing
-        )
+        btnScan.isEnabled = false
+        showStatus(getString(
+            if (scanMode == OutputMode.TXT || scanMode == OutputMode.DOCX) R.string.recognizing else R.string.preparing
+        ))
 
         lifecycleScope.launch {
             try {
-                val (pages, outputs) = withContext(Dispatchers.IO) { buildOutputs(pageUris, pdfUri, mode) }
-                txtStatus.text = resources.getQuantityString(R.plurals.scanned, pages.size, pages.size)
-                showScan(pages, outputs, mode, saved = false)
+                val record = withContext(Dispatchers.IO) { buildScan(pageUris, pdfUri, scanMode) }
+                showStatus(null)
+                refreshHistory()
+                showActions(record, getString(R.string.scan_ready))
             } catch (e: Exception) {
-                txtStatus.text = getString(R.string.process_error, e.localizedMessage ?: e.toString())
+                showStatus(getString(R.string.process_error, e.localizedMessage ?: e.toString()))
             } finally {
-                setBusy(false)
+                btnScan.isEnabled = true
             }
         }
     }
 
-    /** Produit, dans le cache, les fichiers du format choisi. Renvoie les pages et les fichiers produits. */
-    private fun buildOutputs(pageUris: List<Uri>, pdfUri: Uri?, mode: OutputMode): Pair<List<File>, List<File>> {
-        sharedDir.deleteRecursively()
-        sharedDir.mkdirs()
-        val baseName = "Scan_" + SimpleDateFormat("yyyyMMdd_HHmmss", Locale.FRANCE).format(Date())
-        val single = pageUris.size == 1
-        fun pageName(index: Int, ext: String) = if (single) "$baseName.$ext" else "${baseName}_p${index + 1}.$ext"
+    /** Produit les fichiers du format choisi dans un nouveau dossier de l'historique. */
+    private fun buildScan(pageUris: List<Uri>, pdfUri: Uri?, mode: OutputMode): ScanRecord {
+        val tmp = File(cacheDir, "pages").apply { deleteRecursively(); mkdirs() }
+        val dir = ScanStore.newDir(this, "Scan_" + SimpleDateFormat("yyyyMMdd_HHmmss", Locale.FRANCE).format(Date()))
+        val baseName = dir.name
+        try {
+            val pages = pageUris.mapIndexed { index, uri ->
+                File(tmp, "page${index + 1}.jpg").also { copyUriToFile(uri, it) }
+            }
+            fun pageFile(index: Int, ext: String) =
+                File(dir, if (pages.size == 1) "$baseName.$ext" else "${baseName}_p${index + 1}.$ext")
 
-        val pages = pageUris.mapIndexed { index, uri ->
-            File(sharedDir, pageName(index, "jpg")).also { copyUriToFile(uri, it) }
+            when (mode) {
+                OutputMode.JPG -> pages.forEachIndexed { index, page -> page.copyTo(pageFile(index, "jpg")) }
+                OutputMode.PDF_PER_PAGE -> pages.forEachIndexed { index, page ->
+                    PdfMaker.fromImages(listOf(page), pageFile(index, "pdf"))
+                }
+                OutputMode.PDF_BATCH -> {
+                    val pdf = File(dir, "$baseName.pdf")
+                    if (pdfUri != null) copyUriToFile(pdfUri, pdf) else PdfMaker.fromImages(pages, pdf)
+                }
+                OutputMode.TXT -> writeTxt(TextExtractor.recognize(this, pages), File(dir, "$baseName.txt"))
+                OutputMode.DOCX -> DocxWriter.write(TextExtractor.recognize(this, pages), File(dir, "$baseName.docx"))
+            }
+            return ScanStore.finish(dir, mode, pages.size, pages[0])
+        } catch (e: Exception) {
+            dir.deleteRecursively()
+            throw e
+        } finally {
+            tmp.deleteRecursively()
         }
-
-        val outputs = when (mode) {
-            OutputMode.JPG -> pages
-            OutputMode.PDF_PER_PAGE -> pages.mapIndexed { index, page ->
-                File(sharedDir, pageName(index, "pdf")).also { PdfMaker.fromImages(listOf(page), it) }
-            }
-            OutputMode.PDF_BATCH -> {
-                val pdf = File(sharedDir, "$baseName.pdf")
-                if (pdfUri != null) copyUriToFile(pdfUri, pdf) else PdfMaker.fromImages(pages, pdf)
-                listOf(pdf)
-            }
-            OutputMode.TXT -> {
-                val txt = File(sharedDir, "$baseName.txt")
-                writeTxt(TextExtractor.recognize(this, pages), txt)
-                listOf(txt)
-            }
-            OutputMode.DOCX -> {
-                val docx = File(sharedDir, "$baseName.docx")
-                DocxWriter.write(TextExtractor.recognize(this, pages), docx)
-                listOf(docx)
-            }
-        }
-        return pages to outputs
     }
 
     private fun copyUriToFile(uri: Uri, target: File) {
@@ -220,90 +185,94 @@ class MainActivity : AppCompatActivity() {
         input.use { inp -> target.outputStream().use { inp.copyTo(it) } }
     }
 
-    private fun showScan(pages: List<File>, outputs: List<File>, mode: OutputMode, saved: Boolean) {
-        pageFiles = pages
-        outputFiles = outputs
-        outputMode = mode
-        this.saved = saved
-        updateButtons()
-        lifecycleScope.launch {
-            val thumbs = withContext(Dispatchers.IO) { pages.mapNotNull { decodeSampled(it, 360) } }
-            adapter.submit(thumbs)
+    private fun showStatus(message: String?) {
+        txtStatus.text = message
+        txtStatus.isVisible = message != null
+    }
+
+    /** Menu d'actions d'un scan : affiché après chaque scan et en touchant un scan de la liste. */
+    private fun showActions(record: ScanRecord, title: String) {
+        val actions = buildList<Pair<String, () -> Unit>> {
+            add(getString(R.string.action_open) to { open(record) })
+            if (!record.saved) {
+                val label = if (record.mode == OutputMode.JPG) R.string.action_save_gallery else R.string.action_save_downloads
+                add(getString(label) to { requestSave(record) })
+            }
+            add(getString(R.string.action_email) to { share(record, email = true) })
+            add(getString(R.string.action_share) to { share(record, email = false) })
+            add(getString(R.string.action_delete) to { confirmDelete(record) })
+        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle(title)
+            .setItems(actions.map { it.first }.toTypedArray()) { _, which -> actions[which].second() }
+            .setNegativeButton(R.string.close, null)
+            .show()
+    }
+
+    private fun uriOf(file: File): Uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+
+    private fun open(record: ScanRecord) {
+        val file = record.files.firstOrNull() ?: return
+        val intent = Intent(Intent.ACTION_VIEW)
+            .setDataAndType(uriOf(file), record.mode.mime)
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        try {
+            startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
+            toast(getString(R.string.no_viewer))
         }
     }
 
-    private fun setBusy(busy: Boolean) {
-        btnScan.isEnabled = !busy
-        if (busy) {
-            btnSave.isEnabled = false
-            btnEmail.isEnabled = false
-            btnShare.isEnabled = false
-        } else {
-            updateButtons()
-        }
-    }
-
-    private fun updateButtons() {
-        val ready = outputFiles.isNotEmpty()
-        btnSave.isEnabled = ready && !saved
-        btnEmail.isEnabled = ready
-        btnShare.isEnabled = ready
-    }
-
-    private fun onSaveClicked() {
+    private fun requestSave(record: ScanRecord) {
         val needsPermission = Build.VERSION.SDK_INT < Build.VERSION_CODES.Q &&
             ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
             PackageManager.PERMISSION_GRANTED
         if (needsPermission) {
+            pendingSave = record
             storagePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
         } else {
-            saveOutputs()
+            save(record)
         }
     }
 
-    /** Copie les fichiers produits aux emplacements habituels : galerie pour les JPG, Téléchargements sinon. */
-    private fun saveOutputs() {
-        val files = outputFiles
-        val mode = outputMode
-        if (files.isEmpty()) return
-        setBusy(true)
+    /** Copie les fichiers aux emplacements habituels : galerie pour les JPG, Téléchargements sinon. */
+    private fun save(record: ScanRecord) {
         lifecycleScope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    files.forEach { file ->
-                        if (mode == OutputMode.JPG) {
+                    record.files.forEach { file ->
+                        if (record.mode == OutputMode.JPG) {
                             MediaStorage.saveImageToGallery(this@MainActivity, file, file.name)
                         } else {
-                            MediaStorage.saveToDownloads(this@MainActivity, file, file.name, mode.mime)
+                            MediaStorage.saveToDownloads(this@MainActivity, file, file.name, record.mode.mime)
                         }
                     }
+                    ScanStore.markSaved(record)
                 }
-                saved = true
-                val message = if (mode == OutputMode.JPG) R.plurals.saved_gallery else R.plurals.saved_downloads
-                txtStatus.text = resources.getQuantityString(message, files.size, files.size)
+                val message = if (record.mode == OutputMode.JPG) R.plurals.saved_gallery else R.plurals.saved_downloads
+                toast(resources.getQuantityString(message, record.files.size, record.files.size))
+                refreshHistory()
             } catch (e: Exception) {
-                txtStatus.text = getString(R.string.save_error, e.localizedMessage ?: e.toString())
-            } finally {
-                setBusy(false)
+                toast(getString(R.string.save_error, e.localizedMessage ?: e.toString()))
             }
         }
     }
 
     /**
-     * Envoie les fichiers produits. Avec [email], seules les applications de messagerie
+     * Envoie les fichiers du scan. Avec [email], seules les applications de messagerie
      * (Gmail, Outlook…) sont proposées ; sinon toutes : Messages, WhatsApp, Drive…
      */
-    private fun share(email: Boolean) {
-        val files = outputFiles
+    private fun share(record: ScanRecord, email: Boolean) {
+        val files = record.files
         if (files.isEmpty()) return
-        val uris = files.map { FileProvider.getUriForFile(this, "$packageName.fileprovider", it) }
+        val uris = files.map(::uriOf)
         val intent = if (uris.size == 1) {
             Intent(Intent.ACTION_SEND).putExtra(Intent.EXTRA_STREAM, uris[0])
         } else {
             Intent(Intent.ACTION_SEND_MULTIPLE).putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
         }
         intent.apply {
-            type = outputMode.mime
+            type = record.mode.mime
             putExtra(Intent.EXTRA_SUBJECT, getString(R.string.share_subject))
             if (email) {
                 putExtra(Intent.EXTRA_TEXT, getString(R.string.email_body))
@@ -322,14 +291,23 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun confirmDelete(record: ScanRecord) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.delete_title, record.name))
+            .setMessage(R.string.delete_message)
+            .setPositiveButton(R.string.action_delete) { _, _ ->
+                lifecycleScope.launch {
+                    withContext(Dispatchers.IO) { ScanStore.delete(record) }
+                    refreshHistory()
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
     private fun toast(message: String) = Toast.makeText(this, message, Toast.LENGTH_LONG).show()
 
     private companion object {
         const val KEY_MODE = "output_mode"
-        const val KEY_PAGES = "pages"
-        const val KEY_OUTPUTS = "outputs"
-        const val KEY_OUTPUT_MODE = "current_output_mode"
-        const val KEY_SAVED = "saved"
-        const val KEY_STATUS = "status"
     }
 }
