@@ -1,5 +1,6 @@
 package com.aventum.scanner
 
+import android.content.Context
 import android.graphics.BitmapFactory
 import android.text.format.Formatter
 import android.view.LayoutInflater
@@ -7,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -27,6 +29,7 @@ class ScanAdapter(private val onClick: (ScanRecord) -> Unit) : RecyclerView.Adap
         val thumb: ImageView = view.findViewById(R.id.thumb)
         val name: TextView = view.findViewById(R.id.name)
         val details: TextView = view.findViewById(R.id.details)
+        val savedIcon: ImageView = view.findViewById(R.id.savedIcon)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
@@ -37,15 +40,18 @@ class ScanAdapter(private val onClick: (ScanRecord) -> Unit) : RecyclerView.Adap
         val context = holder.itemView.context
         holder.thumb.setImageBitmap(BitmapFactory.decodeFile(scan.thumbnail.absolutePath))
         holder.name.text = scan.name
-        holder.details.text = buildList {
-            add(context.resources.getQuantityString(R.plurals.pages, scan.pageCount, scan.pageCount))
-            add(scan.mode.shortLabel)
-            add(dateFormat.format(Date(scan.created)))
-            add(Formatter.formatShortFileSize(context, scan.totalSize))
-            if (scan.saved) add(context.getString(R.string.saved_badge))
-        }.joinToString(" · ")
+        holder.details.text = details(context, scan)
+        holder.savedIcon.isVisible = scan.saved
         holder.itemView.setOnClickListener { onClick(scan) }
     }
 
     override fun getItemCount() = scans.size
+
+    /** « 3 pages · PDF · 7 nov. 2026, 14:20 · 1,2 Mo » */
+    fun details(context: Context, scan: ScanRecord) = listOf(
+        context.resources.getQuantityString(R.plurals.pages, scan.pageCount, scan.pageCount),
+        scan.mode.shortLabel,
+        dateFormat.format(Date(scan.created)),
+        Formatter.formatShortFileSize(context, scan.totalSize),
+    ).joinToString(" · ")
 }

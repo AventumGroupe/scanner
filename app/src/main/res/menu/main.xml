@@ -3,6 +3,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
         android:id="@+id/menuApiKey"
+        android:icon="@drawable/ic_key"
         android:title="@string/api_key_title"
-        app:showAsAction="never" />
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/menuHelp"
+        android:icon="@drawable/ic_info"
+        android:title="@string/help_title"
+        app:showAsAction="ifRoom" />
 </menu>

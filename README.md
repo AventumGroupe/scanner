@@ -11,7 +11,7 @@ Application Android très simple :
 2. **Scanner** un document avec l'appareil photo (détection automatique des bords,
    recadrage, filtres noir & blanc, plusieurs pages, import depuis la galerie possible).
 3. Le document rejoint la liste **Mes scans** de l'écran d'accueil (du plus récent au plus ancien).
-   Juste après le scan, puis en touchant un scan de la liste, on choisit :
+   Juste après le scan, puis en touchant un scan de la liste, des icônes permettent de :
    - **Ouvrir** ;
    - **Enregistrer** : les JPG vont dans la galerie, album **Scans** (`Images/Scans`) ;
      les PDF et documents Word dans **Téléchargements/Scans** ;
@@ -23,11 +23,12 @@ Application Android très simple :
 
 Le mode « OCR » envoie chaque page à l'API Claude d'Anthropic (modèle `claude-opus-5-5`),
 qui lit aussi bien l'écriture manuscrite que le texte imprimé. On scanne toutes les pages à la suite
-(jusqu'à 30) ; elles sont lues l'une après l'autre puis réunies dans un seul document Word.
+(jusqu'à 30) ; elles sont lues l'une après l'autre, avec une barre de progression et un bouton
+**Annuler**, puis réunies dans un seul document Word.
 Ce mode nécessite :
 
 - une **clé d'API Anthropic** (console.anthropic.com), saisie une fois dans l'application
-  (menu **⋮ › Clé API Claude**) et conservée uniquement sur le téléphone ;
+  (icône **clé** en haut de l'écran), chiffrée et conservée uniquement sur le téléphone ;
 - une **connexion internet** ; l'usage est facturé par Anthropic sur le compte de la clé.
 
 Les pages sont alors **envoyées à Anthropic** : à éviter pour les documents confidentiels.
@@ -70,6 +71,8 @@ Avec Android Studio (ouvrir le dossier) ou en ligne de commande avec le SDK Andr
 | Fichier | Rôle |
 |---|---|
 | `app/src/main/java/com/aventum/scanner/MainActivity.kt` | Écran d'accueil : format, scan, actions |
+| `app/src/main/java/com/aventum/scanner/ScanViewModel.kt` | Traitements longs (OCR, enregistrement), progression |
+| `app/src/main/java/com/aventum/scanner/SecretStore.kt` | Clé API chiffrée (Keystore Android) |
 | `app/src/main/java/com/aventum/scanner/MediaStorage.kt` | Écriture dans la galerie et les Téléchargements |
 | `app/src/main/java/com/aventum/scanner/PdfMaker.kt` | Création des PDF page par page |
 | `app/src/main/java/com/aventum/scanner/ClaudeTranscriber.kt` | OCR par l'API Claude |

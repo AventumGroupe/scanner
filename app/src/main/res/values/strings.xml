@@ -1,11 +1,13 @@
 <resources>
     <string name="app_name">Aventum Scan</string>
-    <string name="mode_label">Format des fichiers</string>
-    <string name="mode_jpg">JPG – un fichier par page</string>
+
+    <!-- Accueil -->
+    <string name="mode_label">Format</string>
+    <string name="mode_jpg">JPG – une image par page</string>
     <string name="mode_pdf_per_page">PDF – un fichier par page</string>
-    <string name="mode_pdf_batch">PDF – un seul fichier pour toutes les pages</string>
-    <string name="mode_ocr">OCR – document Word (texte de toutes les pages)</string>
-    <string name="scan">Scanner un document</string>
+    <string name="mode_pdf_batch">PDF – toutes les pages</string>
+    <string name="mode_ocr">OCR – texte dans Word</string>
+    <string name="scan">Scanner</string>
     <string name="history_title">Mes scans</string>
     <string name="saved_badge">Enregistré</string>
     <plurals name="pages">
@@ -13,55 +15,66 @@
         <item quantity="other">%d pages</item>
     </plurals>
 
+    <!-- Aide -->
+    <string name="formats_info_title">Les formats</string>
+    <string name="formats_info_message">• JPG : une image par page.\n• PDF – un fichier par page.\n• PDF – toutes les pages réunies.\n• OCR : le texte de toutes les pages, même manuscrit, lu par l\'IA et mis dans un document Word.\n\nL\'OCR demande internet et une clé API. Les pages sont alors envoyées à Anthropic.</string>
+    <string name="help_title">Aide</string>
+    <string name="help_message">1. Choisissez un format.\n2. Touchez Scanner et photographiez une ou plusieurs pages.\n3. Touchez un scan de la liste pour l\'ouvrir, l\'enregistrer ou l\'envoyer.\n\nJPG → Galerie › Scans\nPDF, Word → Téléchargements › Scans\n\nVersion %s</string>
+
+    <!-- Progression -->
+    <string name="preparing">Préparation…</string>
+    <string name="progress_reading">Lecture IA · page %1$d sur %2$d</string>
+    <string name="cancelling">Annulation après la page en cours…</string>
+    <string name="cancel">Annuler</string>
+
+    <!-- Actions sur un scan -->
     <string name="scan_ready">Document prêt</string>
-    <string name="actions_title">%s</string>
     <string name="action_open">Ouvrir</string>
-    <string name="action_save_gallery">Enregistrer dans la galerie</string>
-    <string name="action_save_downloads">Enregistrer dans Téléchargements</string>
-    <string name="action_email">Envoyer par e-mail</string>
+    <string name="action_save">Enregistrer</string>
+    <string name="action_saved">Enregistré</string>
+    <string name="action_email">E-mail</string>
     <string name="action_share">Partager</string>
     <string name="action_delete">Supprimer</string>
-    <string name="close">Fermer</string>
-    <string name="cancel">Annuler</string>
     <string name="delete_title">Supprimer %s ?</string>
-    <string name="delete_message">Le scan est retiré de la liste. Les copies déjà enregistrées dans la galerie ou les Téléchargements sont conservées.</string>
-
+    <string name="delete_message">Les copies déjà enregistrées sur le téléphone sont conservées.</string>
     <string name="share_via">Partager via…</string>
     <string name="email_via">Envoyer par e-mail via…</string>
     <string name="share_subject">Document scanné</string>
     <string name="email_body">Veuillez trouver ci-joint le document scanné.</string>
-    <string name="preparing">Préparation des fichiers…</string>
-    <string name="recognizing_page">Lecture de la page %1$d sur %2$d par l\'IA… (10 à 30 secondes par page)</string>
-
-    <string name="api_key_title">Clé API Claude (OCR)</string>
-    <string name="api_key_message">Collez votre clé d\'API Anthropic (console.anthropic.com). Elle reste enregistrée sur ce téléphone. Les pages scannées en mode « OCR » sont envoyées à Anthropic pour être lues.</string>
-    <string name="api_key_hint">sk-ant-…</string>
-    <string name="api_key_save">Enregistrer</string>
-    <string name="api_key_delete">Supprimer la clé</string>
-    <string name="api_key_saved">Clé API enregistrée.</string>
-    <string name="api_key_deleted">Clé API supprimée.</string>
-    <string name="api_key_invalid">Clé non valide : une clé Anthropic commence par « sk-ant- ».</string>
-    <string name="api_key_missing">Aucune clé API Claude n\'est enregistrée (menu ⋮ › Clé API Claude).</string>
-    <string name="ai_error_network">Impossible de joindre le service d\'IA. Vérifiez la connexion internet puis réessayez.</string>
-    <string name="ai_error_key">La clé API Claude est refusée. Vérifiez-la dans le menu ⋮ › Clé API Claude.</string>
-    <string name="ai_error_account">Le compte Anthropic refuse la requête (crédit épuisé ou accès restreint) : %s</string>
-    <string name="ai_error_busy">Le service d\'IA est momentanément surchargé. Réessayez dans quelques instants.</string>
-    <string name="ai_error_refusal">Le service d\'IA a refusé de traiter ce document.</string>
-    <string name="ai_error_other">Erreur du service d\'IA (%1$d) : %2$s</string>
     <plurals name="saved_gallery">
-        <item quantity="one">%d image enregistrée dans la galerie (Images › Scans).</item>
-        <item quantity="other">%d images enregistrées dans la galerie (Images › Scans).</item>
+        <item quantity="one">Image enregistrée dans Galerie › Scans</item>
+        <item quantity="other">%d images enregistrées dans Galerie › Scans</item>
     </plurals>
     <plurals name="saved_downloads">
-        <item quantity="one">%d fichier enregistré dans Téléchargements › Scans.</item>
-        <item quantity="other">%d fichiers enregistrés dans Téléchargements › Scans.</item>
+        <item quantity="one">Enregistré dans Téléchargements › Scans</item>
+        <item quantity="other">%d fichiers enregistrés dans Téléchargements › Scans</item>
     </plurals>
-    <string name="scan_error">Impossible de lancer le scanner : %s</string>
+
+    <!-- Clé API -->
+    <string name="api_key_title">Clé API Claude</string>
+    <string name="api_key_message">Clé Anthropic (console.anthropic.com), chiffrée et conservée sur ce téléphone.</string>
+    <string name="api_key_hint">sk-ant-…</string>
+    <string name="api_key_save">Enregistrer</string>
+    <string name="api_key_delete">Supprimer</string>
+    <string name="api_key_saved">Clé API enregistrée</string>
+    <string name="api_key_deleted">Clé API supprimée</string>
+    <string name="api_key_invalid">Clé non valide : elle doit commencer par « sk-ant- ».</string>
+    <string name="api_key_missing">Aucune clé API enregistrée (icône clé en haut de l\'écran).</string>
+
+    <!-- Erreurs -->
     <string name="process_error_title">Le document n\'a pas pu être créé</string>
-    <string name="no_text_found">Aucun texte n\'a été reconnu. Vérifiez que le document est net, bien éclairé et contient du texte imprimé, puis réessayez.</string>
+    <string name="no_text_found">Aucun texte n\'a été reconnu. Vérifiez que la page est nette et bien éclairée, puis réessayez.</string>
+    <string name="read_error">Une page scannée n\'a pas pu être lue.</string>
+    <string name="scan_error">Impossible de lancer le scanner : %s</string>
     <string name="save_error">Erreur lors de l\'enregistrement : %s</string>
-    <string name="permission_denied">Autorisation refusée : les fichiers ne peuvent pas être enregistrés.</string>
+    <string name="permission_denied">Autorisation refusée : impossible d\'enregistrer.</string>
     <string name="no_app">Aucune application disponible pour le partage.</string>
     <string name="no_email_app">Aucune application de messagerie installée.</string>
-    <string name="no_viewer">Aucune application installée pour ouvrir ce fichier.</string>
+    <string name="no_viewer">Aucune application pour ouvrir ce fichier.</string>
+    <string name="ai_error_network">Impossible de joindre l\'IA. Vérifiez la connexion internet puis réessayez.</string>
+    <string name="ai_error_key">La clé API est refusée. Vérifiez-la (icône clé en haut de l\'écran).</string>
+    <string name="ai_error_account">Le compte Anthropic refuse la requête (crédit épuisé ou accès restreint) : %s</string>
+    <string name="ai_error_busy">L\'IA est momentanément surchargée. Réessayez dans quelques instants.</string>
+    <string name="ai_error_refusal">L\'IA a refusé de traiter ce document.</string>
+    <string name="ai_error_other">Erreur de l\'IA (%1$d) : %2$s</string>
 </resources>
