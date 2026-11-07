@@ -11,12 +11,13 @@ android {
         applicationId = "com.aventum.scanner"
         minSdk = 26
         targetSdk = 34
-        versionCode = 4
-        versionName = "1.3"
+        versionCode = 5
+        versionName = "1.4"
 
-        // Processeurs des téléphones Android : limite la taille ajoutée par le modèle d'OCR.
+        // Téléphones 64 bits uniquement (quasiment tous depuis 2017-2018) : divise la taille
+        // ajoutée par le modèle d'OCR.
         ndk {
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+            abiFilters += listOf("arm64-v8a")
         }
     }
 
@@ -36,7 +37,10 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // Retire le code et les ressources inutilisés pour alléger l'APK.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
             // Sans clé fournie, signé avec la clé de debug pour rester installable.
             signingConfig = signingConfigs.getByName(if (releaseKeystore != null) "release" else "debug")
         }
@@ -48,6 +52,13 @@ android {
     }
     kotlinOptions {
         jvmTarget = "17"
+    }
+
+    // Bibliothèques natives compressées dans l'APK : téléchargement plus léger.
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
     }
 }
 

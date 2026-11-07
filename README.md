@@ -53,7 +53,7 @@ Avec Android Studio (ouvrir le dossier) ou en ligne de commande avec le SDK Andr
 
 ## Configuration requise
 
-- Android 8.0 (API 26) ou plus récent
+- Android 8.0 (API 26) ou plus récent, téléphone 64 bits (quasiment tous depuis 2017-2018)
 - Services Google Play (présents sur la quasi-totalité des téléphones Android)
 
 ## Structure
