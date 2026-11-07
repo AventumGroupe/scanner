@@ -31,12 +31,12 @@ object MediaStorage {
         return insert(context, MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values, source)
     }
 
-    /** Enregistre le PDF dans Téléchargements › Scans. */
-    fun savePdfToDownloads(context: Context, source: File, displayName: String): Boolean {
+    /** Enregistre un fichier (PDF, TXT, DOCX…) dans Téléchargements › Scans. */
+    fun saveToDownloads(context: Context, source: File, displayName: String, mimeType: String): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val values = ContentValues().apply {
                 put(MediaStore.Downloads.DISPLAY_NAME, displayName)
-                put(MediaStore.Downloads.MIME_TYPE, "application/pdf")
+                put(MediaStore.Downloads.MIME_TYPE, mimeType)
                 put(MediaStore.Downloads.RELATIVE_PATH, "${Environment.DIRECTORY_DOWNLOADS}/$FOLDER")
                 put(MediaStore.Downloads.IS_PENDING, 1)
             }

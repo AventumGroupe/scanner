@@ -1,31 +1,40 @@
 <resources>
     <string name="app_name">Aventum Scan</string>
-    <string name="intro">Scannez vos documents avec l\'appareil photo, puis envoyez-les par e-mail, SMS, WhatsApp… Les images vont dans la galerie (album « Scans »), les PDF dans Téléchargements › Scans.</string>
+    <string name="intro">Choisissez un format, scannez, puis enregistrez ou envoyez le résultat (e-mail, SMS, WhatsApp…). Le texte est reconnu sur le téléphone, sans envoi sur internet.</string>
     <string name="mode_label">Format des fichiers</string>
-    <string name="mode_jpg">JPG – un fichier par page (galerie)</string>
+    <string name="mode_jpg">JPG – un fichier par page</string>
     <string name="mode_pdf_per_page">PDF – un fichier par page</string>
     <string name="mode_pdf_batch">PDF – un seul fichier pour toutes les pages</string>
+    <string name="mode_txt">Texte (OCR) – fichier TXT</string>
+    <string name="mode_docx">Texte (OCR) – document Word (DOCX)</string>
     <string name="scan">Scanner un document</string>
-    <string name="share">Envoyer</string>
-    <string name="share_via">Envoyer via…</string>
+    <string name="save">Enregistrer</string>
+    <string name="email">E-mail</string>
+    <string name="share">Partager</string>
+    <string name="share_via">Partager via…</string>
+    <string name="email_via">Envoyer par e-mail via…</string>
     <string name="share_subject">Document scanné</string>
+    <string name="email_body">Veuillez trouver ci-joint le document scanné.</string>
     <string name="no_scan">Aucun document scanné pour le moment.</string>
-    <string name="saving">Enregistrement en cours…</string>
-    <plurals name="saved_jpg">
+    <string name="preparing">Préparation des fichiers…</string>
+    <string name="recognizing">Reconnaissance du texte en cours…</string>
+    <plurals name="scanned">
+        <item quantity="one">%d page scannée. Enregistrez ou envoyez le document.</item>
+        <item quantity="other">%d pages scannées. Enregistrez ou envoyez le document.</item>
+    </plurals>
+    <plurals name="saved_gallery">
         <item quantity="one">%d image enregistrée dans la galerie (Images › Scans).</item>
         <item quantity="other">%d images enregistrées dans la galerie (Images › Scans).</item>
     </plurals>
-    <plurals name="saved_pdf_per_page">
-        <item quantity="one">%d PDF enregistré dans Téléchargements › Scans.</item>
-        <item quantity="other">%d PDF enregistrés dans Téléchargements › Scans.</item>
-    </plurals>
-    <plurals name="saved_pdf_batch">
-        <item quantity="one">PDF de %d page enregistré dans Téléchargements › Scans.</item>
-        <item quantity="other">PDF de %d pages enregistré dans Téléchargements › Scans.</item>
+    <plurals name="saved_downloads">
+        <item quantity="one">%d fichier enregistré dans Téléchargements › Scans.</item>
+        <item quantity="other">%d fichiers enregistrés dans Téléchargements › Scans.</item>
     </plurals>
     <string name="scan_error">Impossible de lancer le scanner : %s</string>
+    <string name="process_error">Erreur lors du traitement : %s</string>
     <string name="save_error">Erreur lors de l\'enregistrement : %s</string>
-    <string name="permission_denied">Autorisation refusée : les scans ne peuvent pas être enregistrés dans la galerie.</string>
-    <string name="no_app">Aucune application disponible pour l\'envoi.</string>
+    <string name="permission_denied">Autorisation refusée : les fichiers ne peuvent pas être enregistrés.</string>
+    <string name="no_app">Aucune application disponible pour le partage.</string>
+    <string name="no_email_app">Aucune application de messagerie installée.</string>
     <string name="page_description">Page %d</string>
 </resources>
