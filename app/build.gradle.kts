@@ -11,8 +11,8 @@ android {
         applicationId = "com.aventum.scanner"
         minSdk = 26
         targetSdk = 34
-        versionCode = 9
-        versionName = "1.8"
+        versionCode = 10
+        versionName = "1.9"
 
         // Téléphones 64 bits uniquement (quasiment tous depuis 2017-2018) : limite la taille
         // ajoutée par le modèle d'OCR du téléphone.

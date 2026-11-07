@@ -107,7 +107,7 @@ class MainActivity : AppCompatActivity() {
 
         // Format choisi, mémorisé d'une utilisation à l'autre.
         mode = OutputMode.fromName(prefs.getString(KEY_MODE, null)) ?: OutputMode.JPG
-        formatField.setSimpleItems(OutputMode.entries.map { getString(it.label) }.toTypedArray())
+        formatField.setAdapter(NoFilterAdapter(this, OutputMode.entries.map { getString(it.label) }))
         formatField.setText(getString(mode.label), false)
         formatField.setOnItemClickListener { _, _, position, _ ->
             mode = OutputMode.entries[position]
