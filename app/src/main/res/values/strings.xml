@@ -6,7 +6,8 @@
     <string name="mode_jpg">JPG – une image par page</string>
     <string name="mode_pdf_per_page">PDF – un fichier par page</string>
     <string name="mode_pdf_batch">PDF – toutes les pages</string>
-    <string name="mode_ocr">OCR – texte dans Word</string>
+    <string name="mode_ocr_printed">OCR texte imprimé – Word</string>
+    <string name="mode_ocr">OCR texte manuscrit – Word</string>
     <string name="scan">Scanner</string>
     <string name="history_title">Mes scans</string>
     <string name="saved_badge">Enregistré</string>
@@ -17,13 +18,14 @@
 
     <!-- Aide -->
     <string name="formats_info_title">Les formats</string>
-    <string name="formats_info_message">• JPG : une image par page.\n• PDF – un fichier par page.\n• PDF – toutes les pages réunies.\n• OCR : le texte de toutes les pages, même manuscrit, lu par l\'IA et mis dans un document Word.\n\nL\'OCR demande internet et une clé API. Les pages sont alors envoyées à Anthropic.</string>
+    <string name="formats_info_message">• JPG : une image par page.\n• PDF – un fichier par page.\n• PDF – toutes les pages réunies.\n• OCR texte imprimé : le texte de toutes les pages dans un document Word. Gratuit, rapide, hors ligne.\n• OCR texte manuscrit : lit aussi l\'écriture à la main, grâce à l\'IA. Demande internet et une clé API ; les pages sont envoyées à Anthropic.</string>
     <string name="help_title">Aide</string>
     <string name="help_message">1. Choisissez un format.\n2. Touchez Scanner et photographiez une ou plusieurs pages.\n3. Touchez un scan de la liste pour l\'ouvrir, l\'enregistrer ou l\'envoyer.\n\nJPG → Galerie › Scans\nPDF, Word → Téléchargements › Scans\n\nVersion %s</string>
 
     <!-- Progression -->
     <string name="preparing">Préparation…</string>
-    <string name="progress_reading">Lecture IA · page %1$d sur %2$d</string>
+    <string name="progress_reading">Lecture · page %1$d sur %2$d</string>
+    <string name="progress_reading_ai">Lecture IA · page %1$d sur %2$d</string>
     <string name="cancelling">Annulation après la page en cours…</string>
     <string name="cancel">Annuler</string>
 
@@ -65,6 +67,7 @@
     <string name="process_error_title">Le document n\'a pas pu être créé</string>
     <string name="no_text_found">Aucun texte n\'a été reconnu. Vérifiez que la page est nette et bien éclairée, puis réessayez.</string>
     <string name="read_error">Une page scannée n\'a pas pu être lue.</string>
+    <string name="ocr_error">La reconnaissance du texte a échoué : %s</string>
     <string name="scan_error">Impossible de lancer le scanner : %s</string>
     <string name="save_error">Erreur lors de l\'enregistrement : %s</string>
     <string name="permission_denied">Autorisation refusée : impossible d\'enregistrer.</string>

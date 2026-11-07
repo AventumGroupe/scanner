@@ -29,7 +29,7 @@ class ScanViewModel(application: Application) : AndroidViewModel(application) {
     /** Traitement en cours, affiché par la barre de progression. */
     sealed interface Busy {
         data object Preparing : Busy
-        data class Reading(val page: Int, val total: Int) : Busy
+        data class Reading(val page: Int, val total: Int, val ai: Boolean) : Busy
         data object Cancelling : Busy
     }
 
@@ -141,6 +141,7 @@ class ScanViewModel(application: Application) : AndroidViewModel(application) {
                     val pdf = File(dir, "$baseName.pdf")
                     if (pdfUri != null) copyUriToFile(pdfUri, pdf) else PdfMaker.fromImages(pages, pdf)
                 }
+                OutputMode.OCR_PRINTED -> DocxWriter.write(recognize(pages), File(dir, "$baseName.docx"))
                 OutputMode.OCR -> DocxWriter.write(transcribe(pages), File(dir, "$baseName.docx"))
             }
             ensureActive()
@@ -153,13 +154,30 @@ class ScanViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /** Reconnaissance du texte imprimé sur le téléphone, avec suivi de la progression. */
+    private fun CoroutineScope.recognize(pages: List<File>): List<String> {
+        val texts = try {
+            TextExtractor.recognize(pages) { page ->
+                ensureActive()
+                _busy.value = Busy.Reading(page, pages.size, ai = false)
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            val cause = e.cause?.localizedMessage ?: e.localizedMessage ?: e.toString()
+            throw IllegalStateException(context.getString(R.string.ocr_error, cause), e)
+        }
+        if (texts.all { it.isBlank() }) throw IllegalStateException(context.getString(R.string.no_text_found))
+        return texts
+    }
+
     /** Lecture de toutes les pages par l'IA Claude, avec suivi de la progression. */
     private fun CoroutineScope.transcribe(pages: List<File>): List<String> {
         val apiKey = SecretStore.loadApiKey(context)
             ?: throw IllegalStateException(context.getString(R.string.api_key_missing))
         val texts = ClaudeTranscriber.transcribe(context, apiKey, pages) { page ->
             ensureActive()
-            _busy.value = Busy.Reading(page, pages.size)
+            _busy.value = Busy.Reading(page, pages.size, ai = true)
         }
         if (texts.all { it.isBlank() }) throw IllegalStateException(context.getString(R.string.no_text_found))
         return texts

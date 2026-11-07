@@ -178,7 +178,9 @@ class MainActivity : AppCompatActivity() {
         progressIndeterminate.isVisible = busy != null && reading == null
         btnCancel.isVisible = reading != null
         progressLabel.text = when (busy) {
-            is ScanViewModel.Busy.Reading -> getString(R.string.progress_reading, busy.page, busy.total)
+            is ScanViewModel.Busy.Reading -> getString(
+                if (busy.ai) R.string.progress_reading_ai else R.string.progress_reading, busy.page, busy.total
+            )
             ScanViewModel.Busy.Cancelling -> getString(R.string.cancelling)
             else -> getString(R.string.preparing)
         }

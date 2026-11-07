@@ -6,7 +6,9 @@ Application Android très simple :
    - **JPG** – un fichier par page ;
    - **PDF** – un fichier par page ;
    - **PDF** – un seul fichier pour toutes les pages (scan en lot) ;
-   - **OCR – document Word** : le texte de toutes les pages scannées, y compris manuscrit,
+   - **OCR texte imprimé – Word** : le texte de toutes les pages, reconnu sur le téléphone
+     (gratuit, rapide, hors ligne), dans un seul document Word ;
+   - **OCR texte manuscrit – Word** : le texte de toutes les pages, y compris écrit à la main,
      lu par l'IA Claude et réuni dans un seul document Word (un saut de page entre chaque page).
 2. **Scanner** un document avec l'appareil photo (détection automatique des bords,
    recadrage, filtres noir & blanc, plusieurs pages, import depuis la galerie possible).
@@ -19,9 +21,9 @@ Application Android très simple :
    - **Partager** : toutes les applications installées (Messages, WhatsApp, Drive, Teams…) ;
    - **Supprimer** : retire le scan de la liste (les copies enregistrées sont conservées).
 
-### OCR (IA)
+### OCR texte manuscrit (IA)
 
-Le mode « OCR » envoie chaque page à l'API Claude d'Anthropic (modèle `claude-opus-5-5`),
+Le mode « OCR texte manuscrit » envoie chaque page à l'API Claude d'Anthropic (modèle `claude-opus-5-5`),
 qui lit aussi bien l'écriture manuscrite que le texte imprimé. On scanne toutes les pages à la suite
 (jusqu'à 30) ; elles sont lues l'une après l'autre, avec une barre de progression et un bouton
 **Annuler**, puis réunies dans un seul document Word.
@@ -63,7 +65,7 @@ Avec Android Studio (ouvrir le dossier) ou en ligne de commande avec le SDK Andr
 
 ## Configuration requise
 
-- Android 8.0 (API 26) ou plus récent
+- Android 8.0 (API 26) ou plus récent, téléphone 64 bits (quasiment tous depuis 2017-2018)
 - Services Google Play (présents sur la quasi-totalité des téléphones Android)
 
 ## Structure
@@ -75,7 +77,8 @@ Avec Android Studio (ouvrir le dossier) ou en ligne de commande avec le SDK Andr
 | `app/src/main/java/com/aventum/scanner/SecretStore.kt` | Clé API chiffrée (Keystore Android) |
 | `app/src/main/java/com/aventum/scanner/MediaStorage.kt` | Écriture dans la galerie et les Téléchargements |
 | `app/src/main/java/com/aventum/scanner/PdfMaker.kt` | Création des PDF page par page |
-| `app/src/main/java/com/aventum/scanner/ClaudeTranscriber.kt` | OCR par l'API Claude |
+| `app/src/main/java/com/aventum/scanner/TextExtractor.kt` | OCR texte imprimé, sur le téléphone |
+| `app/src/main/java/com/aventum/scanner/ClaudeTranscriber.kt` | OCR texte manuscrit, par l'API Claude |
 | `app/src/main/java/com/aventum/scanner/DocumentWriters.kt` | Écriture du document Word (DOCX) |
 | `app/src/main/java/com/aventum/scanner/ScanStore.kt` | Historique « Mes scans » (stockage privé) |
 | `app/src/main/java/com/aventum/scanner/ScanAdapter.kt` | Affichage de la liste « Mes scans » |
